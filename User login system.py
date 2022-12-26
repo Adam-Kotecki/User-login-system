@@ -21,7 +21,6 @@ create_account_btn = tk.Button(root, text="Create account", command=lambda: regi
 create_account_btn.place(x=160, y=100)
 
 def register_page():
-    # button.place_forget()
     
     for widgets in root.winfo_children():
         widgets.destroy()
