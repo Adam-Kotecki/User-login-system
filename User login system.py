@@ -7,6 +7,8 @@ from tkinter.messagebox import showinfo
 from PIL import Image, ImageTk
 from tkcalendar import Calendar, DateEntry
 from datetime import datetime
+import sqlite3
+
 
 root = tk.Tk()
 
@@ -66,22 +68,45 @@ def register_page():
     register_button = ttk.Button(root, text="Register", command=lambda: send_data())
     register_button.grid(column=0, row = 9)
     
+    connection = sqlite3.connect("users.db")
+    cursor = connection.cursor()
+    
     def send_data():
+        label1.config(fg = "red")
         if username.get() == "":
             label1["text"] = "Please type username"
+            return
         elif (len(username.get()) < 5) or username.get()[0] in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"):
             label1["text"] = "Username should consists of at least 5 characters\n and should not starts with digit"
+            return
         elif password.get() == "":
             label1["text"] = "Please provide password"
+            return
         elif (len(password.get()) < 8) or (not any(letter in "!@#$%^&*()-+?_=,<>/" for letter in password.get())):
             label1["text"] = "Password should be at least 8 characters long and should consists of special character"
+            return
         elif confirm_password.get() == "":
             label1["text"] = "Please repeat password"
+            return
         elif confirm_password.get() != password.get():
             label1["text"] = "Repeated password does not match password"
+            return
         elif email.get() == "":
             label1["text"] = "Please type email"
-    
+            return
+        
+        cursor.execute("select * from users where username=:u", {"u": username.get()})
+        user_search = cursor.fetchall()
+        
+        if len(user_search) == 0:
+            cursor.execute("insert into users values (?,?,?)", (username.get(), password.get(), email.get()) )
+            label1["text"] = "Account has been created"
+            label1.config(fg = "green")
+        else:
+            label1["text"] = "Provided username already exists"
+            
+        connection.close
+        
 register_page()
     
 
