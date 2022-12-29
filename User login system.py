@@ -104,14 +104,12 @@ def register_page():
             label1.config(fg = "green")
         else:
             label1["text"] = "Provided username already exists"
-            
+        
+        connection.commit()
         connection.close
         
 register_page()
     
-
-def compare_data():
-    pass
 
 def login_page():
     
@@ -151,6 +149,47 @@ def login_page():
     
     register_button = ttk.Button(root, text="Don't have an account? Register", command=lambda: register_page())
     register_button.grid(column=0, row =  7, sticky = "N")
+    
+    def compare_data():
+        if username.get() == "":
+            label1["text"] = "Please provide username or email"
+            return
+        elif password.get() == "":
+            label1["text"] = "Please provide password"
+            return
+        
+        connection = sqlite3.connect("users.db")
+        cursor = connection.cursor()
+        
+        cursor.execute("select username, email from users where username=:u", {"u": username.get()})
+        user_search = cursor.fetchall()
+        
+        if username.get() in [user_search[0][0] , user_search[0][1]]:
+            cursor.execute("select password from users where username=:u", {"u": username.get()})
+            password_search = cursor.fetchall()
+            if password_search[0][0] == password.get():
+                logged_in()
+                
+    def logged_in():
+        for widgets in root.winfo_children():
+          widgets.destroy()
+        
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=3)
+        root.rowconfigure(1, weight=12)
+        root.rowconfigure(2, weight=2)
+        root.rowconfigure(3, weight=2)
+        
+        label1 = tk.Label(root, text="Logged in" , fg = "green")
+        label1.grid(column=0, row = 0)
+        
+        label2 = ttk.Label(root, text="")
+        label2.grid(column=0, row = 1)
+        
+        sign_out_button = ttk.Button(root, text="Sign out", command=lambda: login_page())
+        sign_out_button.grid(column=0, row = 2, sticky = "N")
+        
+            
     
 
 root.mainloop()
