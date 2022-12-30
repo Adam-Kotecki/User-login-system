@@ -76,8 +76,8 @@ def register_page():
         if username.get() == "":
             label1["text"] = "Please type username"
             return
-        elif (len(username.get()) < 5) or username.get()[0] in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"):
-            label1["text"] = "Username should consists of at least 5 characters\n and should not starts with digit"
+        elif (len(username.get()) < 5) or (username.get()[0] in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")) or ("@" in username.get()):
+            label1["text"] = "Username should consists of at least 5 characters\n and should not start with digit and should not contain @."
             return
         elif password.get() == "":
             label1["text"] = "Please provide password"
@@ -105,6 +105,18 @@ def register_page():
         else:
             label1["text"] = "Provided username already exists"
         
+        # checking if email address already exists in database
+        cursor.execute("select * from users where email=:u", {"u": email.get()})
+        email_search = cursor.fetchall()
+        
+        if len(email_search) == 0:
+            cursor.execute("insert into users values (?,?,?)", (username.get(), password.get(), email.get()) )
+            label1["text"] = "Account has been created"
+            label1.config(fg = "green")
+        else:
+            label1["text"] = "Provided email is already registered"
+            label1.config(fg = "red")
+        
         connection.commit()
         connection.close
         
@@ -129,7 +141,7 @@ def login_page():
     label1 = tk.Label(root, text="", fg = "red")
     label1.grid(column=0, row = 0)
     
-    label2 = ttk.Label(root, text="Username:")
+    label2 = ttk.Label(root, text="Username or password:")
     label2.grid(column=0, row = 1)
     
     username = ttk.Entry(root)
@@ -161,14 +173,36 @@ def login_page():
         connection = sqlite3.connect("users.db")
         cursor = connection.cursor()
         
-        cursor.execute("select username, email from users where username=:u", {"u": username.get()})
-        user_search = cursor.fetchall()
+        if not "@" in username.get():
+            cursor.execute("select username from users where username=:u", {"u": username.get()})
+            user_search = cursor.fetchall()
+            
+            try:
+                if username.get() in [user_search[0][0]]:
+                    cursor.execute("select password from users where username=:u", {"u": username.get()})
+                    password_search = cursor.fetchall()
+                if password_search[0][0] == password.get():
+                    logged_in()
+                else:
+                    label1["text"] = "Wrong username or password"
+            except:
+                label1["text"] = "Wrong username or password"
         
-        if username.get() in [user_search[0][0] , user_search[0][1]]:
-            cursor.execute("select password from users where username=:u", {"u": username.get()})
-            password_search = cursor.fetchall()
-            if password_search[0][0] == password.get():
-                logged_in()
+        else:
+            cursor.execute("select email from users where email=:u", {"u": username.get()})
+            email_search = cursor.fetchall()
+            
+            try:
+                if username.get() in [email_search[0][0]]:
+                    cursor.execute("select password from users where email=:u", {"u": username.get()})
+                    password_search = cursor.fetchall()
+                if password_search[0][0] == password.get():
+                    logged_in()
+                else:
+                    label1["text"] = "Wrong username or password"
+            except:
+                label1["text"] = "Wrong username or password"
+                
                 
     def logged_in():
         for widgets in root.winfo_children():
